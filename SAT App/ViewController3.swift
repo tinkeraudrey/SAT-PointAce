@@ -88,22 +88,22 @@ class ViewController3: UIViewController {
         var yOffset: CGFloat = 150.0
         for (index, reward) in rewards.enumerated() {
             let titleLabel = UILabel(frame: CGRect(x: 20, y: yOffset, width: view.frame.width - 40, height: 30))
-            titleLabel.text = "Reward \(index + 1): \(reward.name)"
+            titleLabel.text = "\(reward.name)"
             titleLabel.textColor = .black
-            titleLabel.font = UIFont.systemFont(ofSize: 18)
+            titleLabel.font = UIFont.systemFont(ofSize: 25)
             titleLabel.tag = 100 // Set tag for later removal
             view.addSubview(titleLabel)
             
             let descriptionLabel = UILabel(frame: CGRect(x: 20, y: yOffset + 30, width: view.frame.width - 40, height: 50))
-            descriptionLabel.text = "Description: \(reward.description)"
+            descriptionLabel.text = "\(reward.description)"
             descriptionLabel.textColor = .darkGray
-            descriptionLabel.font = UIFont.systemFont(ofSize: 16)
+            descriptionLabel.font = UIFont.systemFont(ofSize: 18)
             descriptionLabel.numberOfLines = 0
             descriptionLabel.tag = 100 // Set tag for later removal
             view.addSubview(descriptionLabel)
             
             let numberLabel = UILabel(frame: CGRect(x: 20, y: yOffset + 80, width: view.frame.width - 40, height: 30))
-            numberLabel.text = "Number: \(reward.number)"
+            numberLabel.text = "Points: \(reward.number)"
             numberLabel.textColor = .blue
             numberLabel.font = UIFont.boldSystemFont(ofSize: 18)
             numberLabel.tag = 100 // Set tag for later removal
