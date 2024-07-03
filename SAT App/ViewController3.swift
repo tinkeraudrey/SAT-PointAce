@@ -2,31 +2,59 @@ import UIKit
 
 class ViewController3: UIViewController {
     
-    // Properties to store reward information
     var rewards: [Reward] = [] {
         didSet {
             saveRewards()
         }
     }
-
+    
+    var totalElapsed: TimeInterval = 0 {
+        didSet {
+            updatePointsLabel()
+        }
+    }
+    
+    let pointsLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.systemFont(ofSize: 30)
+        label.textAlignment = .center
+        label.text = "Points: 0"
+        label.textColor = .black
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    let addButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Add Reward", for: .normal)
+        button.setTitleColor(.black, for: .normal)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 20)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(addRewardButtonTapped), for: .touchUpInside)
+        return button
+    }()
+    
+    let refreshButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Refresh Points", for: .normal)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 20)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(refreshPointsButtonTapped), for: .touchUpInside)
+        return button
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .white
         
-        // Load saved rewards
         loadRewards()
         
-        // Create "Add Reward" button
-        let addButton = UIButton(type: .system)
-        addButton.setTitle("Add Reward", for: .normal)
-        addButton.setTitleColor(.black, for: .normal)
-        addButton.titleLabel?.font = UIFont.systemFont(ofSize: 20)
-        addButton.translatesAutoresizingMaskIntoConstraints = false
-        addButton.addTarget(self, action: #selector(addRewardButtonTapped), for: .touchUpInside)
+        totalElapsed = UserDefaults.standard.double(forKey: "totalElapsed")
         
+        view.addSubview(pointsLabel)
         view.addSubview(addButton)
+        view.addSubview(refreshButton)
         
-        // Configure the scroll view and stack view
         let scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scrollView)
@@ -37,15 +65,20 @@ class ViewController3: UIViewController {
         stackView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(stackView)
         
-        // Layout constraints for the button and scroll view
         NSLayoutConstraint.activate([
+            pointsLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            pointsLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
+            
             addButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            addButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -720),
+            addButton.topAnchor.constraint(equalTo: pointsLabel.bottomAnchor, constant: 20),
+            
+            refreshButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            refreshButton.topAnchor.constraint(equalTo: addButton.bottomAnchor, constant: 20),
             
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor, constant: 150),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -100),
+            scrollView.topAnchor.constraint(equalTo: refreshButton.bottomAnchor, constant: 20),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
             
             stackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
             stackView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
@@ -54,11 +87,13 @@ class ViewController3: UIViewController {
             stackView.widthAnchor.constraint(equalTo: scrollView.widthAnchor)
         ])
         
+        updatePointsLabel()
         updateUI()
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(totalElapsedChanged(_:)), name: .totalElapsedDidChange, object: nil)
     }
     
     @objc func addRewardButtonTapped() {
-        // Create an alert controller with text fields
         let alertController = UIAlertController(title: "Add Reward",
                                                 message: nil,
                                                 preferredStyle: .alert)
@@ -76,7 +111,6 @@ class ViewController3: UIViewController {
             numberTextField.keyboardType = .numberPad
         }
         
-        // Add action for "Add" button
         let addAction = UIAlertAction(title: "Add", style: .default) { [weak self] (_) in
             guard let nameTextField = alertController.textFields?[0],
                   let descriptionTextField = alertController.textFields?[1],
@@ -88,34 +122,27 @@ class ViewController3: UIViewController {
             let rewardDescription = descriptionTextField.text ?? ""
             let assignedNumberText = numberTextField.text ?? ""
             if let assignedNumber = Int(assignedNumberText) {
-                // Create a reward object and store it
                 let reward = Reward(name: rewardName, description: rewardDescription, number: assignedNumber)
                 self?.rewards.append(reward)
                 
-                // Update UI to display the rewards
                 self?.updateUI()
             }
         }
         alertController.addAction(addAction)
         
-        // Add cancel action
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
         alertController.addAction(cancelAction)
         
-        // Present the alert controller
         present(alertController, animated: true, completion: nil)
     }
     
-    // Function to update UI with rewards
     func updateUI() {
-        // Remove previous reward labels
         view.subviews.forEach { subview in
             if subview.tag == 100 {
                 subview.removeFromSuperview()
             }
         }
         
-        // Display rewards
         var yOffset: CGFloat = 150.0
         for (index, reward) in rewards.enumerated() {
             let rewardView = UIView(frame: CGRect(x: 20, y: yOffset, width: view.frame.width - 40, height: 130))
@@ -142,13 +169,12 @@ class ViewController3: UIViewController {
             numberLabel.font = UIFont.boldSystemFont(ofSize: 18)
             rewardView.addSubview(numberLabel)
             
-            // Add pan gesture recognizer for deletion
             let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture(_:)))
             rewardView.addGestureRecognizer(panGesture)
             
             view.addSubview(rewardView)
             
-            yOffset += 150 // Increase yOffset for next reward
+            yOffset += 150
         }
     }
     
@@ -162,11 +188,9 @@ class ViewController3: UIViewController {
             gesture.setTranslation(.zero, in: view)
         case .ended:
             if rewardView.frame.origin.x < -view.frame.width * 0.3 {
-                // Animate rewardView off the screen
                 UIView.animate(withDuration: 0.3, animations: {
                     rewardView.frame.origin.x = -self.view.frame.width
                 }) { _ in
-                    // Ask for confirmation to delete
                     let alertController = UIAlertController(title: "Delete Reward",
                                                             message: "Are you sure you want to delete this reward?",
                                                             preferredStyle: .alert)
@@ -179,7 +203,6 @@ class ViewController3: UIViewController {
                     alertController.addAction(deleteAction)
                     
                     let cancelAction = UIAlertAction(title: "Cancel", style: .cancel) { _ in
-                        // Animate rewardView back if cancel is chosen
                         UIView.animate(withDuration: 0.3) {
                             rewardView.frame.origin.x = 20
                         }
@@ -189,7 +212,6 @@ class ViewController3: UIViewController {
                     self.present(alertController, animated: true, completion: nil)
                 }
             } else {
-                // Animate rewardView back to original position
                 UIView.animate(withDuration: 0.3) {
                     rewardView.frame.origin.x = 20
                 }
@@ -199,7 +221,6 @@ class ViewController3: UIViewController {
         }
     }
     
-    // Function to save rewards to UserDefaults
     func saveRewards() {
         let defaults = UserDefaults.standard
         if let savedData = try? JSONEncoder().encode(rewards) {
@@ -207,7 +228,6 @@ class ViewController3: UIViewController {
         }
     }
     
-    // Function to load rewards from UserDefaults
     func loadRewards() {
         let defaults = UserDefaults.standard
         if let savedData = defaults.data(forKey: "rewards"),
@@ -215,11 +235,33 @@ class ViewController3: UIViewController {
             rewards = savedRewards
         }
     }
+    
+    @objc func totalElapsedChanged(_ notification: Notification) {
+        if let newTotalElapsed = notification.userInfo?["totalElapsed"] as? TimeInterval {
+            totalElapsed = newTotalElapsed
+        }
+    }
+    
+    @objc func refreshPointsButtonTapped() {
+        totalElapsed = UserDefaults.standard.double(forKey: "totalElapsed")
+        updatePointsLabel()
+    }
+    
+    func updatePointsLabel() {
+        pointsLabel.text = "Points: \(Int(totalElapsed))"
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
 }
 
-// Reward struct to hold reward information
 struct Reward: Codable {
     let name: String
     let description: String
     let number: Int
+}
+
+extension Notification.Name {
+    static let totalElapsedDidChange = Notification.Name("totalElapsedDidChange")
 }
