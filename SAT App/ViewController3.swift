@@ -10,36 +10,31 @@ class ViewController3: UIViewController {
     
     var totalElapsed: TimeInterval = 0 {
         didSet {
-            updatePointsLabel()
+            updatePointsButton()
         }
     }
     
-    let pointsLabel: UILabel = {
-        let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 30)
-        label.textAlignment = .center
-        label.text = "Points: 0"
-        label.textColor = .black
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-    
-    let addButton: UIButton = {
+    let addRewardButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Add Reward", for: .normal)
-        button.setTitleColor(.black, for: .normal)
+        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = UIColor(red: 58/255, green: 69/255, blue: 99/255, alpha: 1.0)
         button.titleLabel?.font = UIFont.systemFont(ofSize: 20)
-        button.translatesAutoresizingMaskIntoConstraints = false
+        button.layer.cornerRadius = 10
         button.addTarget(self, action: #selector(addRewardButtonTapped), for: .touchUpInside)
+        button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
     
-    let refreshButton: UIButton = {
+    let pointsButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Refresh Points", for: .normal)
+        button.setTitle("Points: 0", for: .normal)
+        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = UIColor(red: 58/255, green: 69/255, blue: 99/255, alpha: 1.0)
         button.titleLabel?.font = UIFont.systemFont(ofSize: 20)
+        button.layer.cornerRadius = 10
+        button.addTarget(self, action: #selector(pointsButtonTapped), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.addTarget(self, action: #selector(refreshPointsButtonTapped), for: .touchUpInside)
         return button
     }()
     
@@ -51,9 +46,8 @@ class ViewController3: UIViewController {
         
         totalElapsed = UserDefaults.standard.double(forKey: "totalElapsed")
         
-        view.addSubview(pointsLabel)
-        view.addSubview(addButton)
-        view.addSubview(refreshButton)
+        view.addSubview(addRewardButton)
+        view.addSubview(pointsButton)
         
         let scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -66,18 +60,19 @@ class ViewController3: UIViewController {
         scrollView.addSubview(stackView)
         
         NSLayoutConstraint.activate([
-            pointsLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            pointsLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
+            pointsButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            pointsButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
+            pointsButton.widthAnchor.constraint(equalToConstant: 200),
+            pointsButton.heightAnchor.constraint(equalToConstant: 50),
             
-            addButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            addButton.topAnchor.constraint(equalTo: pointsLabel.bottomAnchor, constant: 20),
-            
-            refreshButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            refreshButton.topAnchor.constraint(equalTo: addButton.bottomAnchor, constant: 20),
+            addRewardButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            addRewardButton.topAnchor.constraint(equalTo: pointsButton.bottomAnchor, constant: 20),
+            addRewardButton.widthAnchor.constraint(equalToConstant: 200),
+            addRewardButton.heightAnchor.constraint(equalToConstant: 50),
             
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            scrollView.topAnchor.constraint(equalTo: refreshButton.bottomAnchor, constant: 20),
+            scrollView.topAnchor.constraint(equalTo: addRewardButton.bottomAnchor, constant: 40),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
             
             stackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
@@ -87,7 +82,7 @@ class ViewController3: UIViewController {
             stackView.widthAnchor.constraint(equalTo: scrollView.widthAnchor)
         ])
         
-        updatePointsLabel()
+        updatePointsButton()
         updateUI()
         
         NotificationCenter.default.addObserver(self, selector: #selector(totalElapsedChanged(_:)), name: .totalElapsedDidChange, object: nil)
@@ -143,9 +138,9 @@ class ViewController3: UIViewController {
             }
         }
         
-        var yOffset: CGFloat = 150.0
+        var yOffset: CGFloat = 250.0 // Increased to provide more space above for the text and button
         for (index, reward) in rewards.enumerated() {
-            let rewardView = UIView(frame: CGRect(x: 20, y: yOffset, width: view.frame.width - 40, height: 130))
+            let rewardView = UIView(frame: CGRect(x: 20, y: yOffset, width: view.frame.width - 40, height: 100)) // Shortened height
             rewardView.backgroundColor = UIColor(red: 139/255, green: 159/255, blue: 187/255, alpha: 1.0)
             rewardView.layer.cornerRadius = 10
             rewardView.tag = 100
@@ -156,14 +151,14 @@ class ViewController3: UIViewController {
             titleLabel.font = UIFont.systemFont(ofSize: 25)
             rewardView.addSubview(titleLabel)
             
-            let descriptionLabel = UILabel(frame: CGRect(x: 10, y: 40, width: rewardView.frame.width - 20, height: 50))
+            let descriptionLabel = UILabel(frame: CGRect(x: 10, y: 40, width: rewardView.frame.width - 20, height: 30)) // Adjusted height
             descriptionLabel.text = reward.description
             descriptionLabel.textColor = .darkGray
             descriptionLabel.font = UIFont.systemFont(ofSize: 18)
             descriptionLabel.numberOfLines = 0
             rewardView.addSubview(descriptionLabel)
             
-            let numberLabel = UILabel(frame: CGRect(x: 10, y: 90, width: rewardView.frame.width - 20, height: 30))
+            let numberLabel = UILabel(frame: CGRect(x: 10, y: 70, width: rewardView.frame.width - 20, height: 20)) // Adjusted position and height
             numberLabel.text = "Points: \(reward.number)"
             numberLabel.textColor = UIColor(red: 58/255, green: 69/255, blue: 99/255, alpha: 1.0)
             numberLabel.font = UIFont.boldSystemFont(ofSize: 18)
@@ -174,7 +169,7 @@ class ViewController3: UIViewController {
             
             view.addSubview(rewardView)
             
-            yOffset += 150
+            yOffset += 120 // Adjusted spacing
         }
     }
     
@@ -196,7 +191,7 @@ class ViewController3: UIViewController {
                                                             preferredStyle: .alert)
                     
                     let deleteAction = UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
-                        let index = Int((rewardView.frame.minY - 150) / 150)
+                        let index = Int((rewardView.frame.minY - 250) / 120) // Adjusted for new yOffset
                         self?.rewards.remove(at: index)
                         self?.updateUI()
                     }
@@ -242,13 +237,13 @@ class ViewController3: UIViewController {
         }
     }
     
-    @objc func refreshPointsButtonTapped() {
+    @objc func pointsButtonTapped() {
         totalElapsed = UserDefaults.standard.double(forKey: "totalElapsed")
-        updatePointsLabel()
+        updatePointsButton()
     }
     
-    func updatePointsLabel() {
-        pointsLabel.text = "Points: \(Int(totalElapsed))"
+    func updatePointsButton() {
+        pointsButton.setTitle("Points: \(Int(totalElapsed))", for: .normal)
     }
     
     deinit {
