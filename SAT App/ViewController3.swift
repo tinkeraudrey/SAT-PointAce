@@ -142,10 +142,9 @@ class ViewController3: UIViewController {
             numberLabel.font = UIFont.boldSystemFont(ofSize: 18)
             rewardView.addSubview(numberLabel)
             
-            // Add swipe gesture recognizer for deletion
-            let swipeLeft = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipeLeft(_:)))
-            swipeLeft.direction = .left
-            rewardView.addGestureRecognizer(swipeLeft)
+            // Add pan gesture recognizer for deletion
+            let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture(_:)))
+            rewardView.addGestureRecognizer(panGesture)
             
             view.addSubview(rewardView)
             
@@ -153,25 +152,51 @@ class ViewController3: UIViewController {
         }
     }
     
-    @objc func handleSwipeLeft(_ gesture: UISwipeGestureRecognizer) {
+    @objc func handlePanGesture(_ gesture: UIPanGestureRecognizer) {
         guard let rewardView = gesture.view else { return }
-        let index = (rewardView.frame.minY - 150) / 150
-        let reward = rewards[Int(index)]
+        let translation = gesture.translation(in: view)
         
-        let alertController = UIAlertController(title: "Delete Reward",
-                                                message: "Are you sure you want to delete the reward: \(reward.name)?",
-                                                preferredStyle: .alert)
-        
-        let deleteAction = UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
-            self?.rewards.remove(at: Int(index))
-            self?.updateUI()
+        switch gesture.state {
+        case .changed:
+            rewardView.center.x = rewardView.center.x + translation.x
+            gesture.setTranslation(.zero, in: view)
+        case .ended:
+            if rewardView.frame.origin.x < -view.frame.width * 0.3 {
+                // Animate rewardView off the screen
+                UIView.animate(withDuration: 0.3, animations: {
+                    rewardView.frame.origin.x = -self.view.frame.width
+                }) { _ in
+                    // Ask for confirmation to delete
+                    let alertController = UIAlertController(title: "Delete Reward",
+                                                            message: "Are you sure you want to delete this reward?",
+                                                            preferredStyle: .alert)
+                    
+                    let deleteAction = UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
+                        let index = Int((rewardView.frame.minY - 150) / 150)
+                        self?.rewards.remove(at: index)
+                        self?.updateUI()
+                    }
+                    alertController.addAction(deleteAction)
+                    
+                    let cancelAction = UIAlertAction(title: "Cancel", style: .cancel) { _ in
+                        // Animate rewardView back if cancel is chosen
+                        UIView.animate(withDuration: 0.3) {
+                            rewardView.frame.origin.x = 20
+                        }
+                    }
+                    alertController.addAction(cancelAction)
+                    
+                    self.present(alertController, animated: true, completion: nil)
+                }
+            } else {
+                // Animate rewardView back to original position
+                UIView.animate(withDuration: 0.3) {
+                    rewardView.frame.origin.x = 20
+                }
+            }
+        default:
+            break
         }
-        alertController.addAction(deleteAction)
-        
-        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
-        alertController.addAction(cancelAction)
-        
-        present(alertController, animated: true, completion: nil)
     }
     
     // Function to save rewards to UserDefaults
