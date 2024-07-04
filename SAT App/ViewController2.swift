@@ -12,6 +12,15 @@ class ViewController2: UIViewController, TimerDelegate {
         return label
     }()
     
+    let purchaseLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.systemFont(ofSize: 18)
+        label.textAlignment = .center
+        label.textColor = .black
+        label.numberOfLines = 0
+        return label
+    }()
+    
     lazy var refreshButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Refresh", for: .normal)
@@ -25,23 +34,30 @@ class ViewController2: UIViewController, TimerDelegate {
         view.backgroundColor = .white
         
         view.addSubview(timeLabel)
+        view.addSubview(purchaseLabel)
         view.addSubview(refreshButton)
         
         timeLabel.translatesAutoresizingMaskIntoConstraints = false
+        purchaseLabel.translatesAutoresizingMaskIntoConstraints = false
         refreshButton.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
             timeLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             timeLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -50),
             
+            purchaseLabel.topAnchor.constraint(equalTo: timeLabel.bottomAnchor, constant: 20),
+            purchaseLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            purchaseLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            
             refreshButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            refreshButton.topAnchor.constraint(equalTo: timeLabel.bottomAnchor, constant: 20),
+            refreshButton.topAnchor.constraint(equalTo: purchaseLabel.bottomAnchor, constant: 20),
         ])
         
         // Load totalElapsed from UserDefaults initially
         totalElapsed = UserDefaults.standard.double(forKey: "totalElapsed")
         
         updateTimeLabel() // Ensure time label is updated with stored value
+        refreshTime() // Update purchaseLabel initially
     }
     
     func updateTimeLabel() {
@@ -60,6 +76,13 @@ class ViewController2: UIViewController, TimerDelegate {
         // Reload totalElapsed from UserDefaults
         totalElapsed = UserDefaults.standard.double(forKey: "totalElapsed")
         updateTimeLabel()
+        
+        // Update purchaseLabel with the last purchased reward
+        if let lastPurchasedReward = UserDefaults.standard.string(forKey: "lastPurchasedReward") {
+            purchaseLabel.text = "Last purchased: \(lastPurchasedReward)"
+        } else {
+            purchaseLabel.text = "No purchases yet."
+        }
     }
     
     // Implement TimerDelegate method to update totalElapsed

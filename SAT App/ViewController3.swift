@@ -237,8 +237,14 @@ class ViewController3: UIViewController {
                 self?.updatePointsButton()
                 self?.saveTotalElapsed() // Save updated total points
                 
+                // Save last purchased reward name
+                UserDefaults.standard.set(reward.name, forKey: "lastPurchasedReward")
+                
                 // Show congratulatory view with confetti for 5 seconds
                 self?.congratulatoryScreen()
+                
+                // Update UI
+                self?.updateUI()
                 
             } else {
                 let insufficientPointsAlert = UIAlertController(title: "Insufficient Points",
@@ -249,6 +255,7 @@ class ViewController3: UIViewController {
                 self?.present(insufficientPointsAlert, animated: true, completion: nil)
             }
         }
+
         alertController.addAction(buyAction)
         
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
