@@ -235,6 +235,7 @@ class ViewController3: UIViewController {
             if self?.totalElapsed ?? 0 >= TimeInterval(reward.number) {
                 self?.totalElapsed -= TimeInterval(reward.number)
                 self?.updatePointsButton()
+                self?.saveTotalElapsed() // Save updated total points
                 
                 // Show congratulatory view with confetti for 5 seconds
                 self?.congratulatoryScreen()
@@ -255,7 +256,11 @@ class ViewController3: UIViewController {
         
         present(alertController, animated: true, completion: nil)
     }
-    
+
+    func saveTotalElapsed() {
+        UserDefaults.standard.set(totalElapsed, forKey: "totalElapsed")
+    }
+
     func congratulatoryScreen() {
         congratulatoryView.isHidden = false
         confettiImageView.isHidden = false
