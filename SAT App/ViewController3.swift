@@ -107,12 +107,12 @@ class ViewController3: UIViewController {
             congratulatoryView.heightAnchor.constraint(equalToConstant: 250), // Increased height for more space
             
             confettiImageView.centerXAnchor.constraint(equalTo: congratulatoryView.centerXAnchor),
-            confettiImageView.centerYAnchor.constraint(equalTo: congratulatoryView.centerYAnchor),
-            confettiImageView.widthAnchor.constraint(equalToConstant: 200), // Increased size of the confetti image
-            confettiImageView.heightAnchor.constraint(equalToConstant: 200), // Increased size of the confetti image
+            confettiImageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 15),
+            confettiImageView.widthAnchor.constraint(equalToConstant: 320), // Increased size of the confetti image
+            confettiImageView.heightAnchor.constraint(equalToConstant: 320), // Increased size of the confetti image
             
             congratulatoryLabel.centerXAnchor.constraint(equalTo: congratulatoryView.centerXAnchor),
-            congratulatoryLabel.centerYAnchor.constraint(equalTo: congratulatoryView.centerYAnchor),
+            congratulatoryLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 160),
             congratulatoryLabel.widthAnchor.constraint(equalTo: congratulatoryView.widthAnchor, constant: -20),
             
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
@@ -209,6 +209,10 @@ class ViewController3: UIViewController {
             numberLabel.font = UIFont.boldSystemFont(ofSize: 18)
             rewardView.addSubview(numberLabel)
             
+            let swipeGesture = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipeGesture(_:)))
+            swipeGesture.direction = .left
+            rewardView.addGestureRecognizer(swipeGesture)
+            
             let tapGesture = UITapGestureRecognizer(target: self, action: #selector(rewardTapped(_:)))
             rewardView.addGestureRecognizer(tapGesture)
             
@@ -223,11 +227,11 @@ class ViewController3: UIViewController {
         let index = Int((rewardView.frame.minY - 270) / 120) // Adjusted for new yOffset
         let reward = rewards[index]
         
-        let alertController = UIAlertController(title: "Buy Reward",
-                                                message: "Do you want to buy \(reward.name) for \(reward.number) points?",
+        let alertController = UIAlertController(title: "\(reward.name)",
+                                                message: "\(reward.description)\n\nCost: \(reward.number) points\n\nBuy this reward?",
                                                 preferredStyle: .alert)
         
-        let buyAction = UIAlertAction(title: "Buy", style: .default) { [weak self] _ in
+        let buyAction = UIAlertAction(title: "Buy", style: .default) { [weak self] (_) in
             if self?.totalElapsed ?? 0 >= TimeInterval(reward.number) {
                 self?.totalElapsed -= TimeInterval(reward.number)
                 self?.updatePointsButton()
@@ -261,6 +265,44 @@ class ViewController3: UIViewController {
             self.confettiImageView.isHidden = true
         }
     }
+    
+    @objc func handleSwipeGesture(_ gesture: UISwipeGestureRecognizer) {
+        guard let rewardView = gesture.view else { return }
+        
+        let originalX = rewardView.frame.origin.x
+        let halfwayX = -rewardView.frame.width / 2
+        
+        UIView.animate(withDuration: 0.25, animations: {
+            rewardView.frame.origin.x = halfwayX
+        }) { (_) in
+            let deleteConfirmation = UIAlertController(title: "Delete Reward",
+                                                        message: "Are you sure you want to delete this reward?",
+                                                        preferredStyle: .alert)
+            
+            let deleteAction = UIAlertAction(title: "Delete", style: .destructive) { [weak self] (_) in
+                UIView.animate(withDuration: 0.5, animations: {
+                    rewardView.frame.origin.x = -rewardView.frame.width
+                }) { (_) in
+                    rewardView.removeFromSuperview()
+                    
+                    // Update rewards array and save
+                    let index = Int((rewardView.frame.minY - 270) / 120) // Adjusted for new yOffset
+                    self?.rewards.remove(at: index)
+                }
+            }
+            deleteConfirmation.addAction(deleteAction)
+            
+            let cancelAction = UIAlertAction(title: "Cancel", style: .cancel) { (_) in
+                UIView.animate(withDuration: 0.25) {
+                    rewardView.frame.origin.x = originalX // Return to original position
+                }
+            }
+            deleteConfirmation.addAction(cancelAction)
+            
+            self.present(deleteConfirmation, animated: true, completion: nil)
+        }
+    }
+
     
     @objc func totalElapsedChanged(_ notification: Notification) {
         if let newTotalElapsed = notification.userInfo?["totalElapsed"] as? TimeInterval {
